@@ -3,8 +3,9 @@
 const shopModel = require('../models/shop.model')
 const bcrypt = require('bcrypt')
 const crypto = require('crypto')
-const keyTokenModel = require('../models/keyToken.model')
 const keyTokenService = require('./keyToken.service')
+const { createKeyTokenPair } = require('../auth/authUtils')
+const { getInfoData } = require('../utils')
 
 const RoleShop = {
   SHOP: 'SHOP',
@@ -39,7 +40,15 @@ class AccessSerVice {
       if (newShop) {
         // create private key and public key using asymmetric algorithms 'rsa'
         const { privateKey, publicKey } = crypto.generateKeyPairSync('rsa', {
-          modulesLength: 4096,
+          modulusLength: 4096,
+          publicKeyEncoding: {
+            type: 'pkcs1', // pkcs = Public Key CryptoGraphy Standards
+            format: 'pem',
+          },
+          privateKeyEncoding: {
+            type: 'pkcs1',
+            format: 'pem',
+          },
         })
 
         console.log(privateKey, publicKey)
@@ -48,12 +57,36 @@ class AccessSerVice {
           publicKey,
         })
 
-        if (!publicKey) {
+        if (!publicKeyString) {
           return {
             code: 'xxx',
             message: 'Create key token fail',
           }
         }
+
+        // create token pair
+        const tokens = await createKeyTokenPair(
+          { userId: newShop._id, name: name },
+          publicKeyString,
+          privateKey
+        )
+        console.log('Created Token Success::', tokens)
+
+        return {
+          code: 201,
+          metadata: {
+            shop: getInfoData({
+              fields: ['_id', 'name', 'email'],
+              object: newShop,
+            }),
+            tokens,
+          },
+        }
+      }
+
+      return {
+        code: 200,
+        metadata: null,
       }
     } catch (error) {
       return {
