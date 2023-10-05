@@ -38,26 +38,16 @@ class AccessSerVice {
 
       // return a refresh token and direct to home page
       if (newShop) {
-        // create private key and public key using asymmetric algorithms 'rsa'
-        const { privateKey, publicKey } = crypto.generateKeyPairSync('rsa', {
-          modulusLength: 4096,
-          publicKeyEncoding: {
-            type: 'pkcs1', // pkcs = Public Key CryptoGraphy Standards
-            format: 'pem',
-          },
-          privateKeyEncoding: {
-            type: 'pkcs1',
-            format: 'pem',
-          },
-        })
+        const privateKey = crypto.randomBytes(64).toString('hex')
+        const publicKey = crypto.randomBytes(64).toString('hex')
 
-        console.log(privateKey, publicKey)
-        const publicKeyString = await keyTokenService.createKeyToken({
+        const keyStore = await keyTokenService.createKeyToken({
           userId: newShop._id,
           publicKey,
+          privateKey,
         })
 
-        if (!publicKeyString) {
+        if (!keyStore) {
           return {
             code: 'xxx',
             message: 'Create key token fail',
@@ -67,7 +57,7 @@ class AccessSerVice {
         // create token pair
         const tokens = await createKeyTokenPair(
           { userId: newShop._id, name: name },
-          publicKeyString,
+          publicKey,
           privateKey
         )
         console.log('Created Token Success::', tokens)
