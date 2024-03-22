@@ -59,5 +59,6 @@ const asyncHandler = fn => {
 
 module.exports = {
     apiKey,
-    permission
+    permission,
+    asyncHandler
 }
